@@ -1,0 +1,33 @@
+:root {
+  --color-primary: #EA580C;
+  --color-primary-dark: #C2410C;
+  --color-secondary: #FBBF24;
+  
+  --color-background: #F3F4F6;
+  --color-surface: #FFFFFF;
+  
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #4B5563;
+  
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  
+  --color-status-aberto: #3B82F6;
+  --color-status-pago: #10B981;
+  --color-status-enviado: #8B5CF6;
+}
+
+/* Reset básico para zerar margens padrão do navegador */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: Arial, Helvetica, sans-serif; /* Mais para frente podemos usar uma fonte do Google */
+  -webkit-font-smoothing: antialiased;
+}
