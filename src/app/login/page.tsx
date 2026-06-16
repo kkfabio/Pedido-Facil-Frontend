@@ -3,15 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { validarEmail, validarSenha } from "@/lib/api";
+import { api, validarEmail, validarSenha } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erros, setErros] = useState<{ email?: string; senha?: string }>({});
+  const [erros, setErros] = useState<{ email?: string; senha?: string; geral?: string }>({});
+  const [carregando, setCarregando] = useState(false);
 
-  function entrar(e: React.FormEvent) {
+  async function entrar(e: React.FormEvent) {
     e.preventDefault();
     const novos = {
       email: validarEmail(email) ?? undefined,
@@ -20,8 +21,16 @@ export default function LoginPage() {
     setErros(novos);
     if (novos.email || novos.senha) return;
 
-    localStorage.setItem("token_pedido_facil", "logado_com_sucesso");
-    router.push(email.includes("admin") ? "/admin" : "/");
+    setCarregando(true);
+    try {
+      const data = await api.login(email, senha);
+      // token já salvo dentro de api.login()
+      router.push(data.role === "ADMIN" ? "/admin" : "/");
+    } catch {
+      setErros({ geral: "E-mail ou senha incorretos." });
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -55,6 +64,16 @@ export default function LoginPage() {
             Entre para acompanhar pedidos ou gerenciar sua loja.
           </p>
 
+          {erros.geral && (
+            <div style={{
+              background: "#fee2e2", border: "1px solid #fca5a5",
+              borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+              color: "#dc2626", fontSize: 14,
+            }}>
+              {erros.geral}
+            </div>
+          )}
+
           <div className="field">
             <label htmlFor="email">E-mail</label>
             <input
@@ -73,8 +92,13 @@ export default function LoginPage() {
             {erros.senha && <span className="field-error">{erros.senha}</span>}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: "100%", marginTop: 8 }}>
-            Entrar
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: 8, opacity: carregando ? 0.7 : 1 }}
+            disabled={carregando}
+          >
+            {carregando ? "Entrando..." : "Entrar"}
           </button>
 
           <p className="muted" style={{ marginTop: 20, fontSize: 14, textAlign: "center" }}>
@@ -82,9 +106,6 @@ export default function LoginPage() {
             <Link href="/cadastro" style={{ color: "var(--brand)", fontWeight: 700 }}>
               Cadastre-se
             </Link>
-          </p>
-          <p className="faint" style={{ marginTop: 10, fontSize: 12, textAlign: "center" }}>
-            Dica de demo: e-mails contendo “admin” entram no painel de gestão.
           </p>
         </form>
       </section>

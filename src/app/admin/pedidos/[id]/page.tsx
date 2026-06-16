@@ -5,10 +5,8 @@ import Link from "next/link";
 import { api, formatBRL } from "@/lib/api";
 import { Pedido, StatusPedido } from "@/lib/types";
 import { ProductIcon } from "@/components/ProductIcon";
-import { CreditCard, Zap } from "lucide-react";
 
 const proximoStatus: Partial<Record<StatusPedido, StatusPedido>> = {
-  ABERTO: "PAGO",
   PAGO: "ENVIADO",
 };
 
@@ -16,6 +14,7 @@ export default function DetalhePedidoPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [avancando, setAvancando] = useState(false);
 
   useEffect(() => {
     api.buscarPedido(Number(id)).then((p) => {
@@ -24,12 +23,17 @@ export default function DetalhePedidoPage({ params }: { params: Promise<{ id: st
     });
   }, [id]);
 
-  function avancarStatus() {
+  async function avancarStatus() {
     if (!pedido) return;
-    const prox = proximoStatus[pedido.statusPedido];
-    if (!prox) return;
-    // Em produção: PUT /api/pedidos/{id}/status
-    setPedido({ ...pedido, statusPedido: prox });
+    setAvancando(true);
+    try {
+      const atualizado = await api.avancarStatus(pedido.idPedido);
+      if (atualizado) setPedido(atualizado);
+    } catch {
+      alert("Erro ao avançar status do pedido.");
+    } finally {
+      setAvancando(false);
+    }
   }
 
   if (carregando) return <p className="muted">Carregando…</p>;
@@ -61,8 +65,13 @@ export default function DetalhePedidoPage({ params }: { params: Promise<{ id: st
           </p>
         </div>
         {prox && (
-          <button className="btn btn-primary" onClick={avancarStatus}>
-            Marcar como {prox === "PAGO" ? "Pago" : "Enviado"} →
+          <button
+            className="btn btn-primary"
+            onClick={avancarStatus}
+            disabled={avancando}
+            style={{ opacity: avancando ? 0.7 : 1 }}
+          >
+            {avancando ? "Atualizando..." : `Marcar como Enviado →`}
           </button>
         )}
       </header>

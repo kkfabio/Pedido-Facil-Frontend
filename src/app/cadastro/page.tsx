@@ -3,18 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { validarEmail, validarSenha } from "@/lib/api";
+import { api, validarEmail, validarSenha } from "@/lib/api";
 
 export default function CadastroPage() {
   const router = useRouter();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erros, setErros] = useState<{ nome?: string; email?: string; senha?: string }>({});
+  const [erros, setErros] = useState<{ nome?: string; email?: string; senha?: string; geral?: string }>({});
+  const [carregando, setCarregando] = useState(false);
 
-  // Estória 1 — Cadastro de Cliente: nome obrigatório, e-mail com "@" e único,
-  // senha mín. 8 com número (hash BCrypt fica no Spring Boot)
-  function cadastrar(e: React.FormEvent) {
+  async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
     const novos = {
       nome: nome.trim() ? undefined : "O nome é obrigatório.",
@@ -23,7 +22,16 @@ export default function CadastroPage() {
     };
     setErros(novos);
     if (novos.nome || novos.email || novos.senha) return;
-    router.push("/login");
+
+    setCarregando(true);
+    try {
+      await api.register(nome, email, senha);
+      router.push("/login");
+    } catch {
+      setErros({ geral: "Erro ao cadastrar. Este e-mail pode já estar em uso." });
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -36,6 +44,16 @@ export default function CadastroPage() {
         <p className="muted" style={{ marginBottom: 26 }}>
           Leva menos de um minuto — e o primeiro pedido sai mais rápido ainda.
         </p>
+
+        {erros.geral && (
+          <div style={{
+            background: "#fee2e2", border: "1px solid #fca5a5",
+            borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+            color: "#dc2626", fontSize: 14,
+          }}>
+            {erros.geral}
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="nome">Nome completo</label>
@@ -59,9 +77,15 @@ export default function CadastroPage() {
           {erros.senha && <span className="field-error">{erros.senha}</span>}
         </div>
 
-        <button type="submit" className="btn btn-primary" style={{ width: "100%", marginTop: 8 }}>
-          Cadastrar
+        <button
+          type="submit"
+          className="btn btn-primary"
+          style={{ width: "100%", marginTop: 8, opacity: carregando ? 0.7 : 1 }}
+          disabled={carregando}
+        >
+          {carregando ? "Cadastrando..." : "Cadastrar"}
         </button>
+
         <p className="muted" style={{ marginTop: 18, fontSize: 14, textAlign: "center" }}>
           Já tem conta?{" "}
           <Link href="/login" style={{ color: "var(--brand)", fontWeight: 700 }}>Entrar</Link>

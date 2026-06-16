@@ -12,14 +12,14 @@ export default function ProdutosPage() {
   const [preco, setPreco] = useState("");
   const [estoque, setEstoque] = useState("");
   const [categoria, setCategoria] = useState("");
-  const [erros, setErros] = useState<{ nome?: string; preco?: string; estoque?: string }>({});
+  const [erros, setErros] = useState<{ nome?: string; preco?: string; estoque?: string; geral?: string }>({});
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
-    api.listarProdutos().then(setProdutos);
+    api.listarProdutosAdmin().then(setProdutos);
   }, []);
 
-  // Estória 2 — preço obrigatoriamente positivo; estoque inicial não-negativo
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault();
     const p = parseFloat(preco.replace(",", "."));
     const est = parseInt(estoque, 10);
@@ -30,20 +30,44 @@ export default function ProdutosPage() {
     };
     setErros(novos);
     if (novos.nome || novos.preco || novos.estoque) return;
-    // Em produção: POST /api/produtos
-    setProdutos((prev) => [
-      ...prev,
-      { codProduto: Math.max(0, ...prev.map((x) => x.codProduto)) + 1, nome, preco: p, estoque: est, categoria: categoria || "Outros" },
-    ]);
-    setNome(""); setPreco(""); setEstoque(""); setCategoria(""); setAberto(false);
+
+    setCarregando(true);
+    try {
+      const novo = await api.criarProduto({ nome, preco: p, estoque: est, descricao: categoria });
+      if (novo) setProdutos((prev) => [...prev, novo]);
+      setNome(""); setPreco(""); setEstoque(""); setCategoria(""); setAberto(false);
+    } catch {
+      setErros({ geral: "Erro ao salvar produto. Verifique se o nome já existe." });
+    } finally {
+      setCarregando(false);
+    }
   }
 
-  function ajustarEstoque(cod: number, delta: number) {
-    setProdutos((prev) =>
-      prev.map((p) =>
-        p.codProduto === cod ? { ...p, estoque: Math.max(0, p.estoque + delta) } : p
-      )
-    );
+  async function ajustarEstoque(produto: Produto, delta: number) {
+    const novoEstoque = Math.max(0, produto.estoque + delta);
+    try {
+      await api.atualizarProduto(produto.codProduto, {
+        nome: produto.nome,
+        preco: produto.preco,
+        estoque: novoEstoque,
+        descricao: produto.categoria,
+      });
+      setProdutos((prev) =>
+        prev.map((p) => p.codProduto === produto.codProduto ? { ...p, estoque: novoEstoque } : p)
+      );
+    } catch {
+      alert("Erro ao ajustar estoque.");
+    }
+  }
+
+  async function desativar(id: number) {
+    if (!confirm("Desativar este produto?")) return;
+    try {
+      await api.desativarProduto(id);
+      setProdutos((prev) => prev.filter((p) => p.codProduto !== id));
+    } catch {
+      alert("Erro ao desativar produto.");
+    }
   }
 
   return (
@@ -59,7 +83,7 @@ export default function ProdutosPage() {
       <div className="card rise d1" style={{ overflow: "hidden" }}>
         <table className="table">
           <thead>
-            <tr><th>Cód.</th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ajuste</th></tr>
+            <tr><th>Cód.</th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ajuste</th><th></th></tr>
           </thead>
           <tbody>
             {produtos.map((p) => (
@@ -73,20 +97,23 @@ export default function ProdutosPage() {
                 <td className="muted">{p.categoria}</td>
                 <td className="price">{formatBRL(p.preco)}</td>
                 <td>
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      color: p.estoque === 0 ? "var(--error)" : p.estoque < 10 ? "#b07d12" : "var(--basil)",
-                    }}
-                  >
+                  <span style={{
+                    fontWeight: 700,
+                    color: p.estoque === 0 ? "var(--error)" : p.estoque < 10 ? "#b07d12" : "var(--basil)",
+                  }}>
                     {p.estoque === 0 ? "Esgotado" : `${p.estoque} un.`}
                   </span>
                 </td>
                 <td>
                   <div style={{ display: "inline-flex", gap: 6 }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => ajustarEstoque(p.codProduto, -1)} disabled={p.estoque === 0}>−</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => ajustarEstoque(p.codProduto, +1)}>+</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => ajustarEstoque(p, -1)} disabled={p.estoque === 0}>−</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => ajustarEstoque(p, +1)}>+</button>
                   </div>
+                </td>
+                <td>
+                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--error)" }} onClick={() => desativar(p.codProduto)}>
+                    Desativar
+                  </button>
                 </td>
               </tr>
             ))}
@@ -109,6 +136,17 @@ export default function ProdutosPage() {
             style={{ width: "100%", maxWidth: 440, padding: 32 }}
           >
             <h2 style={{ fontSize: 22, marginBottom: 20 }}>Novo produto</h2>
+
+            {erros.geral && (
+              <div style={{
+                background: "#fee2e2", border: "1px solid #fca5a5",
+                borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+                color: "#dc2626", fontSize: 14,
+              }}>
+                {erros.geral}
+              </div>
+            )}
+
             <div className="field">
               <label>Nome</label>
               <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Pizza Calabresa" />
@@ -131,7 +169,9 @@ export default function ProdutosPage() {
               <input value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Pizzas" />
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Salvar</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1, opacity: carregando ? 0.7 : 1 }} disabled={carregando}>
+                {carregando ? "Salvando..." : "Salvar"}
+              </button>
               <button type="button" className="btn btn-ghost" onClick={() => setAberto(false)}>Cancelar</button>
             </div>
           </form>

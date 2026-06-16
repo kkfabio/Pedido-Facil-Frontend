@@ -11,14 +11,14 @@ export default function ClientesPage() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erros, setErros] = useState<{ nome?: string; email?: string; senha?: string }>({});
+  const [erros, setErros] = useState<{ nome?: string; email?: string; senha?: string; geral?: string }>({});
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
     api.listarClientes().then(setClientes);
   }, []);
 
-  // Estória 1 — validações: nome obrigatório, e-mail com "@" e único, senha mín. 8 + número
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault();
     const novos = {
       nome: nome.trim() ? undefined : "O nome é obrigatório.",
@@ -29,9 +29,17 @@ export default function ClientesPage() {
     };
     setErros(novos);
     if (novos.nome || novos.email || novos.senha) return;
-    // Em produção: POST /api/clientes (hash da senha no back via BCrypt)
-    setClientes((prev) => [...prev, { idCliente: prev.length + 1, nome, email }]);
-    setNome(""); setEmail(""); setSenha(""); setAberto(false);
+
+    setCarregando(true);
+    try {
+      const novo = await api.criarCliente(nome, email, senha);
+      if (novo) setClientes((prev) => [...prev, novo]);
+      setNome(""); setEmail(""); setSenha(""); setAberto(false);
+    } catch {
+      setErros({ geral: "Erro ao cadastrar cliente. Tente novamente." });
+    } finally {
+      setCarregando(false);
+    }
   }
 
   const visiveis = clientes.filter(
@@ -68,13 +76,16 @@ export default function ClientesPage() {
               </tr>
             ))}
             {visiveis.length === 0 && (
-              <tr><td colSpan={3} className="muted" style={{ textAlign: "center", padding: 32 }}>Nenhum cliente encontrado.</td></tr>
+              <tr>
+                <td colSpan={3} className="muted" style={{ textAlign: "center", padding: 32 }}>
+                  Nenhum cliente encontrado.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal de cadastro */}
       {aberto && (
         <div
           onClick={() => setAberto(false)}
@@ -90,6 +101,17 @@ export default function ClientesPage() {
             style={{ width: "100%", maxWidth: 420, padding: 32 }}
           >
             <h2 style={{ fontSize: 22, marginBottom: 20 }}>Novo cliente</h2>
+
+            {erros.geral && (
+              <div style={{
+                background: "#fee2e2", border: "1px solid #fca5a5",
+                borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+                color: "#dc2626", fontSize: 14,
+              }}>
+                {erros.geral}
+              </div>
+            )}
+
             <div className="field">
               <label>Nome</label>
               <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Maria da Silva" />
@@ -106,7 +128,14 @@ export default function ClientesPage() {
               {erros.senha && <span className="field-error">{erros.senha}</span>}
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Salvar</button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ flex: 1, opacity: carregando ? 0.7 : 1 }}
+                disabled={carregando}
+              >
+                {carregando ? "Salvando..." : "Salvar"}
+              </button>
               <button type="button" className="btn btn-ghost" onClick={() => setAberto(false)}>Cancelar</button>
             </div>
           </form>
