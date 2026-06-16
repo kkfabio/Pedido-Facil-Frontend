@@ -3,14 +3,14 @@ import { Cliente, Pedido, Produto } from "./types";
 // Dados de demonstração — substituídos pela API Spring Boot via src/lib/api.ts
 
 export const produtosMock: Produto[] = [
-  { codProduto: 1, nome: "X-Brasa Artesanal", preco: 28.9, estoque: 42, categoria: "Lanches" },
-  { codProduto: 2, nome: "Pizza Margherita", preco: 49.0, estoque: 18, categoria: "Pizzas", emoji: "🍕" },
-  { codProduto: 3, nome: "Açaí 500ml", preco: 18.5, estoque: 60, categoria: "Sobremesas", emoji: "🍧" },
-  { codProduto: 4, nome: "Combo Família", preco: 89.9, estoque: 9, categoria: "Combos", emoji: "🍱" },
-  { codProduto: 5, nome: "Suco de Laranja 1L", preco: 12.0, estoque: 35, categoria: "Bebidas", emoji: "🍊" },
-  { codProduto: 6, nome: "Batata Rústica", preco: 16.9, estoque: 0, categoria: "Acompanhamentos", emoji: "🍟" },
-  { codProduto: 7, nome: "Wrap de Frango", preco: 24.5, estoque: 22, categoria: "Lanches", emoji: "🌯" },
-  { codProduto: 8, nome: "Brownie da Casa", preco: 14.0, estoque: 27, categoria: "Sobremesas", emoji: "🍫" },
+  { codProduto: 1, nome: "X-Brasa Artesanal", preco: 28.9, estoque: 42, categoria: "Lanches", imagem: "/produtos/x-brasa.png" },
+  { codProduto: 2, nome: "Pizza Margherita", preco: 49.0, estoque: 18, categoria: "Pizzas", emoji: "🍕", imagem: "/produtos/pizza.png" },
+  { codProduto: 3, nome: "Açaí 500ml", preco: 18.5, estoque: 60, categoria: "Sobremesas", emoji: "🍧", imagem: "/produtos/acai.png" },
+  { codProduto: 4, nome: "Combo Família", preco: 89.9, estoque: 9, categoria: "Combos", emoji: "🍱", imagem: "/produtos/combo.png" },
+  { codProduto: 5, nome: "Suco de Laranja 1L", preco: 12.0, estoque: 35, categoria: "Bebidas", emoji: "🍊", imagem: "/produtos/suco.png" },
+  { codProduto: 6, nome: "Batata Rústica", preco: 16.9, estoque: 0, categoria: "Acompanhamentos", emoji: "🍟", imagem: "/produtos/batata.png" },
+  { codProduto: 7, nome: "Wrap de Frango", preco: 24.5, estoque: 22, categoria: "Lanches", emoji: "🌯", imagem: "/produtos/wrap.png" },
+  { codProduto: 8, nome: "Brownie da Casa", preco: 14.0, estoque: 27, categoria: "Sobremesas", emoji: "🍫", imagem: "/produtos/brownie.png" },
 ];
 
 export const clientesMock: Cliente[] = [

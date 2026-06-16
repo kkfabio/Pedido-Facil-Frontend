@@ -19,13 +19,13 @@ export default function LoginPage() {
     };
     setErros(novos);
     if (novos.email || novos.senha) return;
-    // Em produção: POST /api/auth/login no Spring Boot (senha com hash BCrypt no back)
+
+    localStorage.setItem("token_pedido_facil", "logado_com_sucesso");
     router.push(email.includes("admin") ? "/admin" : "/");
   }
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-      {/* Painel de marca */}
       <aside
         style={{
           background: "linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 100%)",
@@ -48,7 +48,6 @@ export default function LoginPage() {
         <p style={{ fontSize: 13, opacity: 0.7 }}>© 2026 PedidoFácil</p>
       </aside>
 
-      {/* Formulário */}
       <section style={{ display: "grid", placeItems: "center", padding: 32 }}>
         <form onSubmit={entrar} className="rise" style={{ width: "100%", maxWidth: 380 }}>
           <h2 style={{ fontSize: 28, marginBottom: 6 }}>Bem-vindo de volta</h2>

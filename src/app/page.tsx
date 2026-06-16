@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api, formatBRL } from "@/lib/api";
 import { Produto } from "@/lib/types";
 import { useCart } from "@/lib/cart";
@@ -13,10 +14,17 @@ export default function VitrinePage() {
   const [categoria, setCategoria] = useState<string>("Todos");
   const [toast, setToast] = useState<{ msg: string; erro: boolean } | null>(null);
   const { adicionar } = useCart();
+  const router = useRouter();
 
   useEffect(() => {
-    api.listarProdutos().then(setProdutos);
-  }, []);
+    const usuarioLogado = localStorage.getItem("token_pedido_facil");
+    
+    if (!usuarioLogado) {
+      router.push("/login");
+    } else {
+      api.listarProdutos().then(setProdutos);
+    }
+  }, [router]);
 
   const categorias = useMemo(
     () => ["Todos", ...Array.from(new Set(produtos.map((p) => p.categoria ?? "Outros")))],
@@ -37,7 +45,6 @@ export default function VitrinePage() {
     <>
       <StoreHeader />
 
-      {/* HERO */}
       <section
         style={{
           background: "linear-gradient(135deg, var(--ink) 0%, #3a2014 70%, #4a2410 100%)",
@@ -93,7 +100,6 @@ export default function VitrinePage() {
         </div>
       </section>
 
-      {/* CATÁLOGO */}
       <main id="cardapio" className="container" style={{ padding: "48px 24px 80px" }}>
         <h2 className="rise" style={{ fontSize: 30, marginBottom: 6 }}>Cardápio</h2>
         <p className="muted rise d1" style={{ marginBottom: 24 }}>
@@ -135,13 +141,27 @@ export default function VitrinePage() {
               >
                 <div
                   style={{
-                    width: 56, height: 56, borderRadius: 16,
+                    width: "100%",
+                    height: 140,
+                    borderRadius: 12,
                     background: "var(--brand-tint)",
-                    display: "grid", placeItems: "center",
+                    overflow: "hidden",
+                    display: "grid",
+                    placeItems: p.imagem ? "stretch" : "center",
                   }}
                 >
-                  <ProductIcon categoria={p.categoria} size={30} />
+                  {p.imagem ? (
+                    <img 
+                      src={p.imagem} 
+                      alt={p.nome}
+                      className="produto-img"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                    />
+                  ) : (
+                    <ProductIcon categoria={p.categoria} size={32} />
+                  )}
                 </div>
+
                 <div>
                   <p className="faint" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
                     {p.categoria}
@@ -174,7 +194,6 @@ export default function VitrinePage() {
         </div>
       </main>
 
-      {/* TOAST */}
       {toast && (
         <div
           role="status"
@@ -189,6 +208,15 @@ export default function VitrinePage() {
           {toast.msg}
         </div>
       )}
+
+      <style>{`
+        .produto-img {
+          transition: transform 0.3s ease;
+        }
+        .card:hover .produto-img {
+          transform: scale(1.08);
+        }
+      `}</style>
 
       <footer style={{ borderTop: "1px solid var(--line)", padding: "28px 0", textAlign: "center" }}>
         <p className="faint" style={{ fontSize: 13 }}>

@@ -15,8 +15,9 @@ export interface Produto {
   nome: string;
   preco: number;
   estoque: number;
-  /** Front-only: não existe no banco; usado para filtros e ícones */
   categoria?: string;
+  imagem?: string;
+  emoji?: string;
 }
 
 export interface ItemPedido {
